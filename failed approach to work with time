@@ -1,0 +1,30 @@
+  ############## NOTE  #################
+##problem in using posixt for month in time_df:
+
+time_df <- as.POSIXlt(month_df$start_date)
+time_df <- as.Date(month_df$start_date) 
+str(time_df) 
+***result:::
+  [Error in charToDate(x) : 
+  character string is not in a standard unambiguous format`]
+  
+###convert time to minute approach 1:
+(It didn"t work due to problem in time data,second is not everyone)
+timeDate <-  as.POSIXlt(time_df$ended_at)
+str(time_df)
+time_df$ride_length_min <- difftime(time_df$ended_at,time_df$started_at,units = "mins")
+***result:::
+ [ Error in charToDate(x) : 
+  character string is not in a standard unambiguous format`]
+  
+##convert time date approach 2:
+time_df$start_date<- as_datetime(time_df$started_at,format="%m/%d/%Y %H:%m")
+timediff<-tabyl(time_df,start_date,member_casual)
+***result::NA
+ 2214909
+3158605 , Total 5373514 entry are NA which is about 61% og total data.`.#so,it seems not appropriate to use this process.
+
+##convert time date approach 3:
+final_df$ride_length <- difftime(as.POSIXct(strptime(final_df$ended_at, "%d/%m/%Y %H:%M")),
+                                  as.POSIXct(strptime(final_df$started_at, "%d/%m/%Y %H:%M")), unit = "mins")
+timecheck<-tabyl(final_df,ride_length,customer_type)
