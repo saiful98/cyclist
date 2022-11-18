@@ -1,0 +1,98 @@
+
+#Loading required library:
+library(readr)
+library(dplyr)
+library(ggplot2) 
+library(tidyverse)
+library(janitor)
+library(skimr)
+library(lubridate)
+
+
+#loading data:
+df1 <-  read.csv("D:/data/202110.csv")
+df1
+df2 <-  read.csv("D:/data/202111.csv")
+df2
+df3 <-  read.csv("D:/data/202112.csv")
+df3
+df4 <-  read.csv("D:/data/202201.csv")
+df4
+df5 <-  read.csv("D:/data/202202.csv")
+df5
+df6 <-  read.csv("D:/data/202203.csv")
+df6
+df7 <-  read.csv("D:/data/202204.csv")
+df7
+df8 <-  read.csv("D:/data/202205.csv")
+df8
+df9 <-  read.csv("D:/data/202206.csv")
+df9
+df10 <- read.csv("D:/data/202207.csv")
+df10
+df11 <- read.csv("D:/data/202208.csv")
+df11
+df12 <- read.csv("D:/data/202209.csv")
+df12
+
+##combine data:
+combined_df<- rbind(df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11,df12)
+combined_df
+
+##removing df from environment::
+rm(df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11,df12)
+
+##looking inside data:
+str(combined_df)
+glimpse(combined_df)
+head(combined_df)
+select(combined_df)
+
+
+##making time df using seperate function:
+time_df <- combined_df %>% 
+            select(c(started_at,ended_at,ride_length))
+time_df<-separate(time_df,ride_length, into = c('hour','min','sec'),sep=':')  
+time_df$minute <- round(as.numeric(time$hour)*60+as.numeric(time$min)+as.numeric(time$sec)/60,digits = 3)
+time_df<-separate(month_df,started_at,into=c('start_date' , 'start_time'), sep=" ")
+time_df<-separate(month_df,start_date,into = c('start_month','start_date','start_year') ,sep = "/")
+
+View(time_df)
+
+###creating final_df::
+final_df <- cbind(combined_df,time_df$minute,time_df$start_month)
+
+final_df <- final_df %>%
+  rename(minute=`time_df$minute`)
+
+final_df <- final_df %>%
+  rename(start_month=`time_df$start_month`)
+
+final_df <- final_df %>%
+  rename(customer_type=member_casual)
+
+##looking inside data:
+str(analysis_df)
+glimpse(analysis_df)
+head(analysis_df)
+select(analysis_df)
+
+###creating data frame with necessary variable for analysis:: 
+analysis_df<- final_df %>%
+  select(c(rideable_type,customer_type,ride_length,weekday,minute,start_month))
+View(analysis_df)
+
+##saving data frame as .csv for future use::
+write.csv(df,"D:/data/combine.csv", row.names = FALSE)  
+write.csv(final_df, "D:/data/final_df.csv",row.names = FALSE)
+write.csv(analysis_df,"D:/data/analysis_df.csv", row.names = FALSE) 
+
+##load data(if necessary):
+combined_df<- read.csv("D:/data/combine.csv")
+month_df<-read.csv("D:/data/month_df.csv")
+time_df<-read.csv("D:/data/month_df.csv")
+
+final_df<- read.csv("D:/data/final_df.csv")
+analysis_df <-read.csv("D:/data/analysis_df.csv")
+        
+      
