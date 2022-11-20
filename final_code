@@ -1,0 +1,149 @@
+### Data Processing
+
+#Loading Data
+df1<- read.csv("../input/cyclist-data/202110.csv")
+df2<- read.csv("../input/cyclist-data/202111.csv")
+df3<- read.csv("../input/cyclist-data/202112.csv")
+df4<- read.csv("../input/cyclist-data/202201.csv")
+df5<- read.csv("../input/cyclist-data/202202.csv")
+df6<- read.csv("../input/cyclist-data/202203.csv")
+df7<- read.csv("../input/cyclist-data/202204.csv")
+df8<- read.csv("../input/cyclist-data/202205.csv")
+df9<- read.csv("../input/cyclist-data/202206.csv")
+df10<- read.csv("../input/cyclist-data/202207.csv")
+df11<- read.csv("../input/cyclist-data/202208.csv")
+df12<- read.csv("../input/cyclist-data/202209.csv")
+
+combined_df<- rbind(df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11,df12)
+str(combined_df)
+glimpse(combined_df)
+
+time_df <- combined_df %>% 
+            select(c(started_at,ended_at,ride_length))
+time_df<-separate(time_df,ride_length, into = c('hour','min','sec'),sep=':')  
+time_df$minute <- round(as.numeric(time_df$hour)*60+as.numeric(time_df$min)+as.numeric(time_df$sec)/60,digits = 3)
+time_df<-separate(time_df,started_at,into=c('start_date' , 'start_time'), sep=" ")
+time_df<-separate(time_df,start_date,into = c('start_month','start_date','start_year') ,sep = "/")
+glimpse(time_df)
+
+final_df <- cbind(combined_df,time_df$minute,time_df$start_month)
+final_df <- final_df %>%
+  rename(minute=`time_df$minute`)
+
+final_df <- final_df %>%
+  rename(start_month=`time_df$start_month`)
+
+final_df <- final_df %>%
+  rename(customer_type=member_casual)
+  
+ ## Removing Unnecessary columns
+final_df <- final_df %>%  
+ select(-c(start_lat, start_lng, end_lat, end_lng))
+Backup data frame for future use
+write.csv(final_df, "final_df.csv", row.names = F)
+Analytical part 
+
+#Loading final data
+final_df <- read.csv("./final_df.csv")
+summary(final_df)
+
+
+# Plot01: Customers using bikes at different weekday
+a1 <- final_df %>%
+  group_by(weekday, customer_type)%>%
+  summarize(num=n())%>%
+  mutate(perc=num/sum(num)*100)
+
+my_labels<-c('Sunday', 'Monday', 'Tuesday', 'Wednesday','Thursday','Friday','Saturday')
+chart1 <- ggplot(data=a1, aes(x=weekday,y=perc,fill=customer_type)) +
+  geom_bar(stat="identity", width=0.6,position=position_dodge())+
+  scale_x_discrete(limits=c("0.5","2","3","4","5","6","7"),labels=my_labels)+
+  theme(axis.text.x = element_text(face="plain", color="#993333",size=14, angle=75))+
+  labs(x = "Weekday" , y = "Customers(%)",
+       title ="Perctange of customers using bike at different weekday", 
+       subtitle = "On basis of different type of customer",
+      theme(legend.position = "top middle")) 
+chart1
+
+#Plot02: Customers using bikes at different month
+a2 <- final_df %>%
+  group_by(start_month, customer_type)%>%
+  summarize(num=n())%>%
+  mutate(perc=num/sum(num)*100)
+month<-c('Jan', 'Feb', 'Mar', 'April','May','June','July','Aug','Sept','Oct','Nov','Dec')
+chart2 <- ggplot(data=a2, aes(x=start_month,y=perc,fill=customer_type)) +
+  geom_bar(stat="identity", width=0.6,position=position_dodge())+
+  scale_x_discrete(limits=c("1","2","3","4","5","6","7","8","9","10","11","12"),labels=month)+
+  theme(axis.text.x = element_text(face="plain", color="#993333",size=14, angle=45))+
+  labs(x = "Month" , y = "Customers(%)",
+       title ="Perctange of customers using bike at different Months", 
+       subtitle ="On basis of different types of customers",
+      theme(legend.position = "top middle")) 
+chart2
+
+#plot3: customers using different type of bikes
+a3 <- final_df %>%
+  group_by(rideable_type, customer_type)%>%
+  summarize(num=n())%>%
+  mutate(perc=num/sum(num)*100)
+chart3 <- ggplot(data=a3, aes(x=rideable_type,y=perc,fill=customer_type)) +
+  geom_bar(stat="identity", width=0.6,position=position_dodge())+
+  theme(axis.text.x = element_text(face="bold", color="#993333",size=14, angle=0))+
+  labs(x = "Rideable_type" , y = "Customers(%)",
+       title ="Rideable_type vs User", 
+       subtitle = "Percentage of customers using different types of bike",
+      theme(legend.position = "top middle")) 
+chart3
+
+#Plot04: Uses of different types of bikes at different month
+a4 <- final_df %>%
+  group_by(rideable_type, start_month)%>%
+  summarize(num=n())%>%
+  mutate(perc=num/sum(num)*100)
+month<-c('Jan', 'Feb', 'Mar', 'April','May','June','July','Aug','Sept','Oct','Nov','Dec')
+chart4 <- ggplot(data=a4, aes(x=start_month,y=perc,fill=rideable_type)) +
+  geom_bar(stat="identity", width=0.6,position=position_dodge())+
+scale_x_discrete(limits=c("1","2","3","4","5","6","7","8","9","10","11","12"),labels=month)+
+  theme(axis.text.x = element_text(face="bold", color="#993333",size=14, angle=90))+
+  labs(x = "Month" , y = "Bikes(%)",
+       title ="Uses of different types of bike at different month", 
+       subtitle = "Percentage of of bike uses in different month",
+      theme(legend.position = "top middle")) 
+chart4
+
+Summary of different scenario
+# 1.Weekday Ride summary:
+ride_summary_weekday<- final_df %>% drop_na() %>%
+                       group_by(weekday)%>% 
+                       summarize(mean_ride_length= mean(minute),
+                       max_ride=max(minute),
+                       min_ride=min(minute),
+                       total_ride_minute=sum(minute)) 
+ride_summary_weekday
+
+# 2.Month ride summary:
+ride_summary_month<- final_df %>% drop_na() %>%
+  group_by(start_month)%>% 
+  summarize(mean_ride_length= mean(minute),
+            max_ride=max(minute),
+            min_ride=min(minute),
+            total_ride_minute=sum(minute)) 
+ride_summary_month
+
+# 3.Member ride summary:
+ride_summary_member<- final_df %>% drop_na() %>% 
+                      group_by(customer_type)%>% 
+                      summarize(mean_ride_length= mean(minute),
+                      max_ride=max(minute),
+                      min_ride=min(minute),
+                      total_ride=sum(minute)) 
+ride_summary_member
+
+ # 4.Bike rideable type summary:
+ride_summary_bike<- final_df %>% drop_na() %>%
+                    group_by(rideable_type)%>% 
+                    summarize(mean_ride_length= mean(minute),
+                    max_ride=max(minute),
+                    min_ride=min(minute),
+                    total_ride=sum(minute)) 
+ride_summary_bike
